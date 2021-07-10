@@ -1,0 +1,44 @@
+﻿@page "/"
+
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+<div class="container">
+    <div >
+        <EditForm Model="TicketViewModel" OnValidSubmit="SendTicket">
+            <DataAnnotationsValidator />
+            <ValidationSummary  />
+            <div class="col-9 py-3">
+                <p>موضوع:</p>
+                <InputText @bind-Value="TicketViewModel.Title" class="form-control" />
+
+            </div>
+            <div class="col-9">
+                <p>پیام:</p>
+
+                <InputTextArea @bind-Value="TicketViewModel.Text" class="form-control" />
+
+            </div>
+            <div class="mt-2">
+                <button type="submit" class="btn btn-primary">ارسال</button>
+
+            </div>
+        </EditForm>
+    </div>
+</div>
+@code {
+    public TicketViewModel TicketViewModel { get; set; } = new();
+
+    private async Task SendTicket()
+    {
+        var request = await Http.PostAsJsonAsync("api/ticket/SendTicket",TicketViewModel);
+        if (request.StatusCode==System.Net.HttpStatusCode.OK)
+        {
+            var requestContent = await request.Content.ReadFromJsonAsync<Result>();
+            if (requestContent.Status==Enums.Status.Success)
+            {
+                await JSRuntime.InvokeVoidAsync("successSweetAler", "پیام شما با موفقیت ارسال شد");
+                TicketViewModel = new();
+                StateHasChanged();
+            }
+        }
+    }
+}

@@ -1,0 +1,50 @@
+﻿<div class="top-row pl-4 navbar navbar-dark">
+    <a class="navbar-brand" href="">Ticketing</a>
+    <button class="navbar-toggler" @onclick="ToggleNavMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <AuthorizeView>
+        <Authorized>
+            <ul class="nav flex-column">
+                @if (@context.User.IsInRole("Admin"))
+                {
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="TicketManager" Match="NavLinkMatch.Prefix">
+                            <span class="oi oi-list-rich" aria-hidden="true"></span> مدیریت تیکت ها
+                        </NavLink>
+                    </li>
+                }
+
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                        <span class="oi oi-plus" aria-hidden="true"></span> ارسال تیکت جدید
+                    </NavLink>
+                </li>
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link" href="MyTickets" Match="NavLinkMatch.All">
+                        <span class="oi oi-home" aria-hidden="true"></span> تیکت های من
+                    </NavLink>
+                </li>
+
+
+
+                
+            </ul>
+        </Authorized>
+        </AuthorizeView>
+       
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

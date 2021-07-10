@@ -1,0 +1,80 @@
+﻿@page "/MyTickets"
+@if (TicketInformation != null)
+{
+
+
+<div>
+    <div>
+
+        <div class="col-9 py-3">
+            <p>موضوع:</p>
+            <input @bind="TicketInformation.Title" class="form-control" />
+
+        </div>
+        <div class="col-9">
+            <p>پیام:</p>
+
+            <textarea @bind="TicketInformation.Text" class="form-control" />
+
+        </div>
+
+    </div>
+    <hr />
+    @if (!string.IsNullOrEmpty(TicketInformation.ReplyText))
+    {
+         <p> پاسخ:</p>
+        <div class="pt-4">
+            <textarea @bind="TicketInformation.ReplyText" class="form-control " readonly />
+        </div>
+    }
+
+
+</div>
+}
+    @if (MyTicketList.Any())
+    {
+        <p class="alert bg-light mt-3">تیکت های ارسال شده:<span class="small text-muted"> (*برای مشاهده بر روی هر تیکت کلیک کنید)</span></p>
+        <div class="list-group col-8 mt-4 container shadow">
+            @foreach (var item in MyTicketList)
+            {
+                var id = item.Id;
+                <a type="button" class="list-group-item list-group-item-action my-1 border-end-0 border-start-0 border-top-0 " aria-current="true" @onclick="()=>GetTicketInformation(id)">
+                  
+                    @item.Title
+                    <span class="  small text-muted">وضعیت: @item.TicketStatus.GetDisplayName()</span>
+                </a>
+            }
+
+        </div>
+    }
+    else
+    {
+        <p>موردی وجود ندارد.</p>
+    }
+    @code {
+
+        public List<TicketViewModel> MyTicketList { get; set; } = new List<TicketViewModel>();
+        public TicketViewModel TicketInformation { get; set; }
+
+        protected override async Task OnInitializedAsync()
+        {
+            var requset = await Http.GetFromJsonAsync<GenericResult<List<TicketViewModel>>>("api/ticket/GetMyTickets");
+            if (requset.Status == Enums.Status.Success)
+            {
+                MyTicketList.AddRange(requset.Model);
+                StateHasChanged();
+            }
+
+        }
+
+        private async Task GetTicketInformation(int id)
+        {
+            var requset = await Http.GetFromJsonAsync<GenericResult<TicketViewModel>>($"api/ticket/GetTicketInformation/"+id);
+            if (requset.Status == Enums.Status.Success)
+            {
+                TicketInformation = requset.Model;
+                StateHasChanged();
+            }
+
+        }
+    }

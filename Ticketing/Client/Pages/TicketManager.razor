@@ -1,0 +1,120 @@
+﻿@page "/TicketManager"
+
+@if (Tickets.Any())
+{
+    <div class="list-group col-8 mt-4 container shadow">
+        @foreach (var item in Tickets)
+        {
+            var id = item.Id;
+            <button type="button" class="list-group-item list-group-item-action my-1 border-end-0 border-start-0 border-top-0 " aria-current="true">
+                <div class="d-flex">
+                    <div class="justify-content-start">
+                        @item.Title
+                    </div>
+                    <div class="float-end">
+                        <span class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#replyModal" @onclick="() => GetTicketInformationAsync(id)"> مشاهده و پاسخ </span>
+                    </div>
+                </div>
+
+            </button>
+        }
+
+    </div>
+}
+else
+{
+    <p>موردی وجود ندارد</p>
+}
+
+
+<!-- Modal -->
+<div class="modal fade" id="replyModal" tabindex="-1" aria-labelledby="replyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-body">
+                    <div class="container">
+
+                        <div class="my-2">
+                            <h6>فرستنده پیام:</h6>
+                            <p>@TicketInformation.UserName</p>
+                        </div>
+                        <div class="my-2">
+                            <h6>موضوع پیام:</h6>
+                            <input class="form-control" @bind="TicketInformation.Title"  readonly/>
+                        </div>
+                        <div class="my-2">
+                            <h6>متن پیام:</h6>
+                            <textarea class="form-control" @bind="TicketInformation.Text" readonly></textarea>
+                        </div>
+                    </div>
+                    <hr />
+                    <div>
+                        <EditForm Model="ReplyTicket" OnValidSubmit="SendReplyAsync">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <p>پاسخ :</p>
+
+                            <InputTextArea class="form-control" @bind-Value="ReplyTicket.ReplyText" />
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                                <button type="submit" class="btn btn-success" >ثبت</button>
+                            </div>
+                        </EditForm>
+
+                    </div>
+                </div>
+               
+            </div>
+        </div>
+    </div>
+
+@code {
+
+    public List<TicketViewModel> Tickets { get; set; } = new();
+    public TicketViewModel TicketInformation { get; set; } = new();
+    public ReplyTicketViewModel ReplyTicket { get; set; } = new();
+
+    private int ticketId;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var requset = await Http.GetFromJsonAsync<GenericResult<List<TicketViewModel>>>("api/ticket/GetPendingTickets");
+            if (requset.Status == Enums.Status.Success)
+            {
+                Tickets.AddRange(requset.Model);
+                await Task.Delay(100);
+
+
+                StateHasChanged();
+            }
+        }
+    }
+
+
+    private async Task GetTicketInformationAsync(int id)
+    {
+        var requset = await Http.GetFromJsonAsync<GenericResult<TicketViewModel>>($"api/ticket/GetTicketInformation/" + id);
+        if (requset.Status == Enums.Status.Success)
+        {
+            TicketInformation = requset.Model;
+            ticketId = id;
+            StateHasChanged();
+        }
+
+    }
+    private async Task SendReplyAsync()
+    {
+        ReplyTicket.TicketId = ticketId;
+        var requset = await Http.PostAsJsonAsync($"api/ticket/SendReply/", ReplyTicket);
+        if (requset.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            await JSRuntime.InvokeVoidAsync("successSweetAler", "پیام شما با موفقیت ارسال شد");
+            ReplyTicket = new();
+            StateHasChanged();
+        }
+
+    }
+
+}
