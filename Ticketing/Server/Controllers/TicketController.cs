@@ -35,6 +35,7 @@ namespace Ticketing.Server.Controllers
                 if (!string.IsNullOrEmpty(userId))
                 {
                     Ticket newTicket = _mapper.Map<Ticket>(ticket);
+                    newTicket.Image= ticket.Image;
                     newTicket.UserId = userId;
                     newTicket.ExpireDate = DateTime.Now.AddHours(48);
                     await _context.Tickets.AddAsync(newTicket);
@@ -90,7 +91,7 @@ namespace Ticketing.Server.Controllers
             try
             {
                 var ticket = await _context.Tickets.Where(x => x.Id == id).Include(x => x.User).Include(x => x.ChildTicket).FirstOrDefaultAsync();
-                return new GenericResult<TicketViewModel>()
+                var result= new GenericResult<TicketViewModel>()
                 {
                     Model = new TicketViewModel
                     {
@@ -101,10 +102,12 @@ namespace Ticketing.Server.Controllers
                         ExpireDate = ticket.ExpireDate,
                         TicketStatus = DateTime.Now > ticket.ExpireDate || ticket.ChildTicketId > 0 ? Enums.TicketStatus.Closed : Enums.TicketStatus.Pending,
                         Title = ticket.Title,
-                        Id = ticket.Id
+                        Id = ticket.Id,
+                        Image=ticket.Image,
                     },
                     Status = Enums.Status.Success
                 };
+                return result;
 
             }
             catch (Exception ex)
@@ -150,6 +153,7 @@ namespace Ticketing.Server.Controllers
             try
             {
 
+                var userId = User.Claims.FirstOrDefault(x => x.Type == "userId")?.Value;
 
                 var result = await _context.Tickets.Where(x => x.TicketStatus == Enums.TicketStatus.Pending && x.ExpireDate > DateTime.Now).Include(x => x.ChildTicket).ToListAsync();
                 return new GenericResult<List<TicketViewModel>>()
@@ -162,6 +166,7 @@ namespace Ticketing.Server.Controllers
                         Title = x.Title,
                         Id = x.Id,
                         TicketStatus = DateTime.Now > x.ExpireDate || x.ChildTicketId > 0 ? Enums.TicketStatus.Closed : Enums.TicketStatus.Pending,
+                        Image=x.Image,
 
                     }).ToList(),
                     Status = Enums.Status.Success,

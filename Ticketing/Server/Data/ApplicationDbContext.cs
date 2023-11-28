@@ -1,5 +1,6 @@
 ﻿using IdentityServer4.EntityFramework.Options;
 using Microsoft.AspNetCore.ApiAuthorization.IdentityServer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System;
@@ -18,7 +19,8 @@ namespace Ticketing.Server.Data
         {
 
         }
-        
+      
+
         public DbSet<Ticket> Tickets { get; set; }
     }
 }

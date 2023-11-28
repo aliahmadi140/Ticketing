@@ -24,6 +24,8 @@ namespace Ticketing.Server.Models
         public int? ChildTicketId { get; set; }
         [ForeignKey("ChildTicketId")]
         public Ticket ChildTicket { get; set; }
+
+        public string Image { get; set; }
     }
    
 }

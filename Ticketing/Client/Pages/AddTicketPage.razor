@@ -2,10 +2,10 @@
 
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 <div class="container">
-    <div >
+    <div class=" input-group">
         <EditForm Model="TicketViewModel" OnValidSubmit="SendTicket">
             <DataAnnotationsValidator />
-            <ValidationSummary  />
+            <ValidationSummary />
             <div class="col-9 py-3">
                 <p>موضوع:</p>
                 <InputText @bind-Value="TicketViewModel.Title" class="form-control" />
@@ -17,6 +17,12 @@
                 <InputTextArea @bind-Value="TicketViewModel.Text" class="form-control" />
 
             </div>
+
+            <div class="custom-file col-9 py-3">
+                <InputFile class="custom-file-input"  OnChange="OnChange" accept="image/png, image/jpeg, image/gif"  />
+                <label class="custom-file-label" for="inputFile">انتخاب فایل</label>
+            </div>
+
             <div class="mt-2">
                 <button type="submit" class="btn btn-primary">ارسال</button>
 
@@ -27,13 +33,17 @@
 @code {
     public TicketViewModel TicketViewModel { get; set; } = new();
 
+
+    string message = "InputFile";
+    bool isDisabled = false;
+
     private async Task SendTicket()
     {
-        var request = await Http.PostAsJsonAsync("api/ticket/SendTicket",TicketViewModel);
-        if (request.StatusCode==System.Net.HttpStatusCode.OK)
+        var request = await Http.PostAsJsonAsync("api/ticket/SendTicket", TicketViewModel);
+        if (request.StatusCode == System.Net.HttpStatusCode.OK)
         {
             var requestContent = await request.Content.ReadFromJsonAsync<Result>();
-            if (requestContent.Status==Enums.Status.Success)
+            if (requestContent.Status == Enums.Status.Success)
             {
                 await JSRuntime.InvokeVoidAsync("successSweetAler", "پیام شما با موفقیت ارسال شد");
                 TicketViewModel = new();
@@ -41,4 +51,20 @@
             }
         }
     }
+
+
+   private async Task OnChange(InputFileChangeEventArgs e)
+    {
+
+        IBrowserFile imgFile = e.File;
+        var buffers = new byte[imgFile.Size];
+        await imgFile.OpenReadStream(maxAllowedSize: 1024 * 300).ReadAsync(buffers);
+        string imageType = imgFile.ContentType;
+        TicketViewModel.Image = $"data:{imageType};base64,{Convert.ToBase64String(buffers)}";
+
+   
+     
+}
+
+
 }

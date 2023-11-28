@@ -47,6 +47,13 @@ else
                             <h6>متن پیام:</h6>
                             <textarea class="form-control" @bind="TicketInformation.Text" readonly></textarea>
                         </div>
+                    @if (!string.IsNullOrEmpty(TicketInformation.Image))
+                    {
+                        <div class="col-3 py-3">
+                            <p>تصویر:</p>
+                            <img src="@TicketInformation.Image" alt="Red dot" class="form-control" />
+                        </div>
+                    }
                     </div>
                     <hr />
                     <div>
