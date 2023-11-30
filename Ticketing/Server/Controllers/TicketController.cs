@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Ticketing.Server.Contracts;
 using Ticketing.Server.Data;
 using Ticketing.Server.Models;
 using Ticketing.Shared.Utilities;
@@ -20,11 +21,15 @@ namespace Ticketing.Server.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
-        public TicketController(ApplicationDbContext context, IMapper mapper)
+        private readonly ITicketService _ticketService;
+        public TicketController(ApplicationDbContext context, IMapper mapper,
+            ITicketService ticketService)
         {
             _context = context;
             _mapper = mapper;
+            _ticketService = ticketService;
         }
+
         [HttpPost]
         public async Task<Result> SendTicket([FromBody] TicketViewModel ticket)
         {
@@ -35,7 +40,7 @@ namespace Ticketing.Server.Controllers
                 if (!string.IsNullOrEmpty(userId))
                 {
                     Ticket newTicket = _mapper.Map<Ticket>(ticket);
-                    newTicket.Image= ticket.Image;
+                    newTicket.Image = ticket.Image;
                     newTicket.UserId = userId;
                     newTicket.ExpireDate = DateTime.Now.AddHours(48);
                     await _context.Tickets.AddAsync(newTicket);
@@ -62,19 +67,12 @@ namespace Ticketing.Server.Controllers
             {
                 var userId = User.Claims.FirstOrDefault(x => x.Type == "userId")?.Value;
 
-                var result = await _context.Tickets.Where(x => x.UserId == userId &&x.TicketStatus!=Enums.TicketStatus.Reply ).Include(x => x.ChildTicket).ToListAsync();
+                var result = await _ticketService.GetMyTickets(userId);
+
                 return new GenericResult<List<TicketViewModel>>()
                 {
-                    Model = result.Select(x => new TicketViewModel
-                    {
-                        UserId = x.UserId,
-                        Text = x.Text,
-                       ReplyText=x.ChildTicket!=null?x.ChildTicket.Text:null,
-                        ExpireDate = x.ExpireDate,
-                        TicketStatus = DateTime.Now > x.ExpireDate || x.ChildTicketId > 0 ? Enums.TicketStatus.Closed : Enums.TicketStatus.Pending,
-                        Title = x.Title,
-                        Id = x.Id
-                    }).ToList(),
+                    Message = Constants.SuccessMessage,
+                    Model = result,
                     Status = Enums.Status.Success
                 };
             }
@@ -91,7 +89,7 @@ namespace Ticketing.Server.Controllers
             try
             {
                 var ticket = await _context.Tickets.Where(x => x.Id == id).Include(x => x.User).Include(x => x.ChildTicket).FirstOrDefaultAsync();
-                var result= new GenericResult<TicketViewModel>()
+                var result = new GenericResult<TicketViewModel>()
                 {
                     Model = new TicketViewModel
                     {
@@ -103,7 +101,7 @@ namespace Ticketing.Server.Controllers
                         TicketStatus = DateTime.Now > ticket.ExpireDate || ticket.ChildTicketId > 0 ? Enums.TicketStatus.Closed : Enums.TicketStatus.Pending,
                         Title = ticket.Title,
                         Id = ticket.Id,
-                        Image=ticket.Image,
+                        Image = ticket.Image,
                     },
                     Status = Enums.Status.Success
                 };
@@ -124,7 +122,7 @@ namespace Ticketing.Server.Controllers
             {
                 var userId = User.Claims.FirstOrDefault(x => x.Type == "userId")?.Value;
 
-                var replyTicket = new Ticket { UserId = userId, Text = model.ReplyText,TicketStatus=Enums.TicketStatus.Reply,ExpireDate=DateTime.Now };
+                var replyTicket = new Ticket { UserId = userId, Text = model.ReplyText, TicketStatus = Enums.TicketStatus.Reply, ExpireDate = DateTime.Now };
                 await _context.Tickets.AddAsync(replyTicket);
                 await _context.SaveChangesAsync();
 
@@ -133,7 +131,7 @@ namespace Ticketing.Server.Controllers
                 var currentTicket = await _context.Tickets.FirstOrDefaultAsync(x => x.Id == model.TicketId);
                 currentTicket.TicketStatus = Enums.TicketStatus.Closed;
                 currentTicket.ChildTicketId = replyTicket.Id;
-                 _context.Tickets.Update(currentTicket);
+                _context.Tickets.Update(currentTicket);
 
                 await _context.SaveChangesAsync();
 
@@ -166,7 +164,7 @@ namespace Ticketing.Server.Controllers
                         Title = x.Title,
                         Id = x.Id,
                         TicketStatus = DateTime.Now > x.ExpireDate || x.ChildTicketId > 0 ? Enums.TicketStatus.Closed : Enums.TicketStatus.Pending,
-                        Image=x.Image,
+                        Image = x.Image,
 
                     }).ToList(),
                     Status = Enums.Status.Success,

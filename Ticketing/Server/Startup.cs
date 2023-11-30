@@ -12,8 +12,10 @@ using Microsoft.Extensions.Hosting;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using Ticketing.Server.Contracts;
 using Ticketing.Server.Data;
 using Ticketing.Server.Models;
+using Ticketing.Server.Services;
 
 namespace Ticketing.Server
 {
@@ -64,7 +66,7 @@ namespace Ticketing.Server
               options.SignIn.RequireConfirmedPhoneNumber = false;
           });
 
-
+            services.AddScoped<ITicketService,TicketService>();
 
             services.AddIdentityServer()
                 .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();
